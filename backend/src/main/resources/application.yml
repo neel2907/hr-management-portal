@@ -1,0 +1,21 @@
+server:
+  port: 8081
+
+spring:
+  datasource:
+    url: jdbc:oracle:thin:@localhost:1522/XEPDB1
+    username: appuser
+    password: app123
+    driver-class-name: oracle.jdbc.OracleDriver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.OracleDialect
+
+jwt:
+  secret: my-super-secure-256-bit-secret-key-change-this
+  expiration: 86400000

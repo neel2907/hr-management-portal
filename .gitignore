@@ -1,0 +1,21 @@
+# Node
+node_modules
+dist
+build
+
+# Java
+target
+*.log
+
+# Env
+.env
+.env.*
+
+# IDE
+.vscode
+.idea
+*.iml
+
+# OS files
+.DS_Store
+Thumbs.db
