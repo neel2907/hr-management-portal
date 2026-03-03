@@ -16,16 +16,19 @@ public class AttendanceController {
     }
 
     @PostMapping("/check-in")
+    @PreAuthorize("hasRole('EMPLOYEE')")
     public String checkIn() {
         return attendanceService.checkIn();
     }
 
     @PostMapping("/check-out")
+    @PreAuthorize("hasRole('EMPLOYEE')")
     public String checkOut() {
         return attendanceService.checkOut();
     }
 
     @GetMapping("/my-records")
+    @PreAuthorize("hasRole('EMPLOYEE')")
     public List<Attendance> myRecords() {
         return attendanceService.getMyAttendance();
     }
@@ -37,6 +40,7 @@ public class AttendanceController {
     }
     
     @GetMapping("/monthly-summary")
+    @PreAuthorize("hasRole('EMPLOYEE')")
     public Double monthlySummary(@RequestParam int year,
                                  @RequestParam int month) {
         return attendanceService.getMonthlyWorkingHours(year, month);

@@ -17,11 +17,13 @@ public class LeaveController {
 
     // EMPLOYEE
     @PostMapping("/apply")
+    @PreAuthorize("hasRole('EMPLOYEE')")
     public String apply(@RequestBody LeaveRequest request) {
         return leaveService.applyLeave(request);
     }
 
     @GetMapping("/my-requests")
+    @PreAuthorize("hasRole('EMPLOYEE')")
     public List<LeaveRequest> myLeaves() {
         return leaveService.getMyLeaves();
     }
