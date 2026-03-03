@@ -1,5 +1,6 @@
 package com.company.portal.attendance;
 
+import com.company.portal.audit.AuditLogService;
 import com.company.portal.user.User;
 import com.company.portal.user.UserRepository;
 import org.springframework.data.domain.Page;
@@ -18,11 +19,14 @@ public class AttendanceService {
 
     private final AttendanceRepository attendanceRepository;
     private final UserRepository userRepository;
+    private final AuditLogService auditLogService;
 
     public AttendanceService(AttendanceRepository attendanceRepository,
-                             UserRepository userRepository) {
+                             UserRepository userRepository,
+                             AuditLogService auditLogService) {
         this.attendanceRepository = attendanceRepository;
         this.userRepository = userRepository;
+        this.auditLogService = auditLogService;
     }
 
     // ✅ CHECK-IN
@@ -51,6 +55,9 @@ public class AttendanceService {
         attendance.setStatus("PRESENT");
 
         attendanceRepository.save(attendance);
+
+        auditLogService.record("ATTENDANCE_CHECK_IN",
+                "User " + user.getId() + " checked in for " + today);
 
         return "Checked in successfully";
     }
@@ -90,6 +97,10 @@ public class AttendanceService {
         attendance.setTotalWorkingHours(hours);
 
         attendanceRepository.save(attendance);
+
+        auditLogService.record("ATTENDANCE_CHECK_OUT",
+                "User " + user.getId() + " checked out for " + today +
+                        " with hours=" + hours);
 
         return "Checked out successfully";
     }

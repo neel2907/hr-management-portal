@@ -1,5 +1,6 @@
 package com.company.portal.leave;
 
+import com.company.portal.audit.AuditLogService;
 import com.company.portal.user.Role;
 import com.company.portal.user.User;
 import com.company.portal.user.UserRepository;
@@ -19,11 +20,17 @@ public class LeaveService {
 
     private final LeaveRepository leaveRepository;
     private final UserRepository userRepository;
+    private final LeaveBalanceHistoryRepository leaveBalanceHistoryRepository;
+    private final AuditLogService auditLogService;
 
     public LeaveService(LeaveRepository leaveRepository,
-                        UserRepository userRepository) {
+                        UserRepository userRepository,
+                        LeaveBalanceHistoryRepository leaveBalanceHistoryRepository,
+                        AuditLogService auditLogService) {
         this.leaveRepository = leaveRepository;
         this.userRepository = userRepository;
+        this.leaveBalanceHistoryRepository = leaveBalanceHistoryRepository;
+        this.auditLogService = auditLogService;
     }
 
     // ✅ Apply Leave (EMPLOYEE)
@@ -55,6 +62,11 @@ public class LeaveService {
         leave.setStatus("PENDING");
 
         leaveRepository.save(leave);
+
+        auditLogService.record("LEAVE_APPLY",
+                "User " + user.getId() +
+                        " applied for leave request " + leave.getId() +
+                        " for " + days + " days");
 
         return "Leave request submitted successfully";
     }
@@ -112,11 +124,20 @@ public class LeaveService {
                 throw new RuntimeException("Insufficient leave balance");
             }
 
-            employee.setAnnualLeaveBalance(
-                    employee.getAnnualLeaveBalance() - leave.getTotalDays()
-            );
+            int changeAmount = -leave.getTotalDays();
+            int newBalance = employee.getAnnualLeaveBalance() + changeAmount;
+            employee.setAnnualLeaveBalance(newBalance);
 
             userRepository.save(employee);
+
+            LeaveBalanceHistory history = new LeaveBalanceHistory();
+            history.setUser(employee);
+            history.setChangeAmount(changeAmount);
+            history.setRemainingBalance(newBalance);
+            history.setReason("Leave " + decision + " for request " + leave.getId());
+            history.setTimestamp(LocalDateTime.now());
+
+            leaveBalanceHistoryRepository.save(history);
         }
 
         // ✅ Status update (for both APPROVED and REJECTED)
@@ -125,6 +146,11 @@ public class LeaveService {
         leave.setReviewedAt(LocalDateTime.now());
 
         leaveRepository.save(leave);
+
+        auditLogService.record("LEAVE_REVIEW",
+                "Admin " + admin.getId() +
+                        " set leave request " + leave.getId() +
+                        " to " + decision);
 
         return "Leave " + decision;
     }

@@ -1,5 +1,6 @@
 package com.company.portal.auth;
 
+import com.company.portal.audit.AuditLogService;
 import com.company.portal.user.Role;
 import com.company.portal.user.User;
 import com.company.portal.user.UserRepository;
@@ -12,12 +13,15 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final AuditLogService auditLogService;
 
     // Explicit constructor injection (no Lombok)
     public AuthService(UserRepository userRepository,
-                       PasswordEncoder passwordEncoder) {
+                       PasswordEncoder passwordEncoder,
+                       AuditLogService auditLogService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.auditLogService = auditLogService;
     }
 
     @Transactional
@@ -38,5 +42,8 @@ public class AuthService {
                 .build();
 
         userRepository.save(user);
+
+        auditLogService.record("USER_REGISTER",
+                "User registered with email " + user.getEmail());
     }
 }
