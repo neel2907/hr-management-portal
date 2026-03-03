@@ -3,8 +3,11 @@ package com.company.portal.leave;
 import com.company.portal.user.Role;
 import com.company.portal.user.User;
 import com.company.portal.user.UserRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -57,7 +60,7 @@ public class LeaveService {
     }
 
     // ✅ View My Leaves
-    public List<LeaveRequest> getMyLeaves() {
+    public Page<LeaveRequest> getMyLeaves(Pageable pageable) {
 
         String email = SecurityContextHolder.getContext()
                 .getAuthentication()
@@ -66,15 +69,16 @@ public class LeaveService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        return leaveRepository.findByUserId(user.getId());
+        return leaveRepository.findByUserId(user.getId(), pageable);
     }
 
     // ✅ ADMIN — View All
-    public List<LeaveRequest> getAllLeaves() {
-        return leaveRepository.findAll();
+    public Page<LeaveRequest> getAllLeaves(Pageable pageable) {
+        return leaveRepository.findAll(pageable);
     }
 
     // ✅ ADMIN — Approve / Reject
+    @Transactional
     public String reviewLeave(String leaveId, String decision) {
 
         String email = SecurityContextHolder.getContext()

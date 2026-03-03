@@ -2,8 +2,11 @@ package com.company.portal.attendance;
 
 import com.company.portal.user.User;
 import com.company.portal.user.UserRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -53,6 +56,7 @@ public class AttendanceService {
     }
 
     // ✅ CHECK-OUT
+    @Transactional
     public String checkOut() {
 
         String email = SecurityContextHolder.getContext()
@@ -91,7 +95,7 @@ public class AttendanceService {
     }
 
     // ✅ View My Attendance
-    public List<Attendance> getMyAttendance() {
+    public Page<Attendance> getMyAttendance(Pageable pageable) {
 
         String email = SecurityContextHolder.getContext()
                 .getAuthentication()
@@ -100,12 +104,12 @@ public class AttendanceService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        return attendanceRepository.findByUserId(user.getId());
+        return attendanceRepository.findByUserId(user.getId(), pageable);
     }
 
     // ✅ ADMIN — View All
-    public List<Attendance> getAllAttendance() {
-        return attendanceRepository.findAll();
+    public Page<Attendance> getAllAttendance(Pageable pageable) {
+        return attendanceRepository.findAll(pageable);
     }
     
     public Double getMonthlyWorkingHours(int year, int month) {

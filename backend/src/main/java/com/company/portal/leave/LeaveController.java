@@ -1,9 +1,9 @@
 package com.company.portal.leave;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/leave")
@@ -24,15 +24,15 @@ public class LeaveController {
 
     @GetMapping("/my-requests")
     @PreAuthorize("hasRole('EMPLOYEE')")
-    public List<LeaveRequest> myLeaves() {
-        return leaveService.getMyLeaves();
+    public Page<LeaveRequest> myLeaves(Pageable pageable) {
+        return leaveService.getMyLeaves(pageable);
     }
 
     // ADMIN
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/all")
-    public List<LeaveRequest> allLeaves() {
-        return leaveService.getAllLeaves();
+    public Page<LeaveRequest> allLeaves(Pageable pageable) {
+        return leaveService.getAllLeaves(pageable);
     }
 
     @PreAuthorize("hasRole('ADMIN')")

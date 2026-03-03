@@ -1,9 +1,9 @@
 package com.company.portal.attendance;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/attendance")
@@ -29,14 +29,14 @@ public class AttendanceController {
 
     @GetMapping("/my-records")
     @PreAuthorize("hasRole('EMPLOYEE')")
-    public List<Attendance> myRecords() {
-        return attendanceService.getMyAttendance();
+    public Page<Attendance> myRecords(Pageable pageable) {
+        return attendanceService.getMyAttendance(pageable);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/all")
-    public List<Attendance> allRecords() {
-        return attendanceService.getAllAttendance();
+    public Page<Attendance> allRecords(Pageable pageable) {
+        return attendanceService.getAllAttendance(pageable);
     }
     
     @GetMapping("/monthly-summary")
