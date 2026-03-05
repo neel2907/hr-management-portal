@@ -16,7 +16,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 
     // If role mismatch, redirect appropriately (to default dashboard)
     if (allowedRoles && !allowedRoles.includes(role)) {
-        return <Navigate to="/dashboard" replace />;
+        return <Navigate to="/login" replace />;
     }
 
     return children;

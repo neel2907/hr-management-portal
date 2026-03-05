@@ -9,11 +9,13 @@ import Login from '../features/auth/Login';
 import Register from '../features/auth/Register';
 import AttendancePage from '../features/attendance/AttendancePage';
 import LeavePage from '../features/leave/LeavePage';
+import LeaveBalanceHistoryPage from '../features/leave/LeaveBalanceHistoryPage';
 import PerformancePage from '../features/performance/PerformancePage';
 import AdminDashboard from '../features/admin/AdminDashboard';
 import AdminLeavePage from '../features/admin/AdminLeavePage';
 import AdminAttendancePage from '../features/admin/AdminAttendancePage';
 import AdminPerformancePage from '../features/admin/AdminPerformancePage';
+import AdminAuditLogPage from '../features/admin/AdminAuditLogPage';
 import EmployeeDashboard from '../features/dashboard/EmployeeDashboard';
 
 const AppRoutes = () => {
@@ -40,6 +42,7 @@ const AppRoutes = () => {
                     {/* Employee Feature Routes */}
                     <Route path="/attendance" element={<AttendancePage />} />
                     <Route path="/leave" element={<LeavePage />} />
+                    <Route path="/leave/ledger" element={<LeaveBalanceHistoryPage />} />
                     <Route path="/performance" element={<PerformancePage />} />
 
                     {/* Admin Protected Routes */}
@@ -72,6 +75,14 @@ const AppRoutes = () => {
                         element={
                             <ProtectedRoute allowedRoles={['ADMIN']}>
                                 <AdminPerformancePage />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/admin/logs"
+                        element={
+                            <ProtectedRoute allowedRoles={['ADMIN']}>
+                                <AdminAuditLogPage />
                             </ProtectedRoute>
                         }
                     />

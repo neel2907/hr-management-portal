@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { decodeJWT } from '../utils/jwtUtils';
+import * as authService from '../services/authService';
 
 const AuthContext = createContext(null);
 
@@ -30,19 +31,18 @@ export const AuthProvider = ({ children }) => {
         setIsLoading(false);
     }, []);
 
-    const login = (token) => {
-        if (checkTokenExpiry(token)) {
-            console.error("Attempted to login with an expired token");
-            return;
+    const login = async (email, password) => {
+        const data = await authService.login(email, password);
+        if (data.token) {
+            const decodedUser = decodeJWT(data.token);
+            setUser(decodedUser);
+            setRole(decodedUser?.role || decodedUser?.authorities);
         }
-        localStorage.setItem('token', token);
-        const decodedUser = decodeJWT(token);
-        setUser(decodedUser);
-        setRole(decodedUser?.role);
+        return data;
     };
 
     const logout = () => {
-        localStorage.removeItem('token');
+        authService.logout();
         setUser(null);
         setRole(null);
     };

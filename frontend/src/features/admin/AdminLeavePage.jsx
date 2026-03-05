@@ -1,21 +1,40 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Alert, CircularProgress, Button } from '@mui/material';
+import { Box, Typography, Button } from '@mui/material';
 import { getAllLeaves, reviewLeave } from '../../services/leaveService';
+import DataTable from '../../components/common/DataTable';
+import AlertSnackbar from '../../components/common/AlertSnackbar';
 
 const AdminLeavePage = () => {
+    // Pagination and Sort State
+    const [page, setPage] = useState(0);
+    const [pageSize, setPageSize] = useState(10);
+    const [sortBy, setSortBy] = useState('startDate');
+    const [sortDirection, setSortDirection] = useState('desc');
+    const [totalElements, setTotalElements] = useState(0);
+    const [totalPages, setTotalPages] = useState(0);
+
     const [leaves, setLeaves] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [actionLoading, setActionLoading] = useState(null);
-    const [error, setError] = useState('');
+
+    // Snackbar State
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [snackbarMessage, setSnackbarMessage] = useState('');
+    const [snackbarSeverity, setSnackbarSeverity] = useState('success');
 
     const fetchLeaves = async () => {
         setIsLoading(true);
-        setError('');
         try {
-            const res = await getAllLeaves();
-            setLeaves(res.data || []);
+            const sortConfig = [`${sortBy},${sortDirection}`];
+            const pageData = await getAllLeaves({ page, size: pageSize, sort: sortConfig });
+
+            setLeaves(pageData.rows);
+            setTotalElements(pageData.total);
+            setTotalPages(pageData.totalPages);
         } catch (err) {
-            setError('Failed to fetch leave requests.');
+            setSnackbarMessage('Failed to fetch leave requests.');
+            setSnackbarSeverity('error');
+            setSnackbarOpen(true);
         } finally {
             setIsLoading(false);
         }
@@ -23,96 +42,136 @@ const AdminLeavePage = () => {
 
     useEffect(() => {
         fetchLeaves();
-    }, []);
+    }, [page, pageSize, sortBy, sortDirection]);
 
     const handleReview = async (leaveId, decision) => {
         setActionLoading(leaveId);
-        setError('');
+
+        // Optimistic UI Update
+        const previousLeaves = [...leaves];
+        const updatedLeaves = leaves.map(leave =>
+            leave.id === leaveId ? { ...leave, status: decision } : leave
+        );
+        setLeaves(updatedLeaves);
+
         try {
             await reviewLeave(leaveId, decision);
-            fetchLeaves();
+            setSnackbarMessage(`Leave successfully ${decision.toLowerCase()}.`);
+            setSnackbarSeverity('success');
+            setSnackbarOpen(true);
         } catch (err) {
-            setError(err.response?.data?.message || `Failed to ${decision.toLowerCase()} leave.`);
+            // Revert on failure
+            setLeaves(previousLeaves);
+            setSnackbarMessage(err.response?.data?.message || `Failed to ${decision.toLowerCase()} leave.`);
+            setSnackbarSeverity('error');
+            setSnackbarOpen(true);
         } finally {
             setActionLoading(null);
         }
     };
 
+    const handleSortChange = (columnId, direction) => {
+        setSortBy(columnId);
+        setSortDirection(direction);
+    };
+
+    const columns = [
+        {
+            id: 'employeeEmail',
+            label: 'Employee Email',
+            sortable: true
+        },
+        {
+            id: 'startDate',
+            label: 'Start Date',
+            sortable: true,
+            render: (val) => new Date(val).toLocaleDateString()
+        },
+        {
+            id: 'endDate',
+            label: 'End Date',
+            sortable: true,
+            render: (val) => new Date(val).toLocaleDateString()
+        },
+        {
+            id: 'reason',
+            label: 'Reason',
+            sortable: true
+        },
+        {
+            id: 'status',
+            label: 'Status',
+            sortable: true,
+            render: (val) => (
+                <Typography
+                    variant="body2"
+                    sx={{
+                        color: val === 'APPROVED' ? 'success.main' : val === 'REJECTED' ? 'error.main' : 'warning.main',
+                        fontWeight: 'bold'
+                    }}
+                >
+                    {val}
+                </Typography>
+            )
+        },
+        {
+            id: 'actions',
+            label: 'Actions',
+            sortable: false,
+            render: (_, row) => (
+                row.status === 'PENDING' ? (
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Button
+                            variant="contained"
+                            color="success"
+                            size="small"
+                            disabled={actionLoading === row.id}
+                            onClick={() => handleReview(row.id, 'APPROVED')}
+                        >
+                            Approve
+                        </Button>
+                        <Button
+                            variant="contained"
+                            color="error"
+                            size="small"
+                            disabled={actionLoading === row.id}
+                            onClick={() => handleReview(row.id, 'REJECTED')}
+                        >
+                            Reject
+                        </Button>
+                    </Box>
+                ) : null
+            )
+        }
+    ];
+
     return (
         <Box>
             <Typography variant="h4" gutterBottom>Manage Leave Requests</Typography>
 
-            {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+            <AlertSnackbar
+                open={snackbarOpen}
+                message={snackbarMessage}
+                severity={snackbarSeverity}
+                onClose={() => setSnackbarOpen(false)}
+            />
 
-            {isLoading ? (
-                <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-                    <CircularProgress />
-                </Box>
-            ) : (
-                <TableContainer component={Paper}>
-                    <Table>
-                        <TableHead>
-                            <TableRow>
-                                <TableCell>Employee Email</TableCell>
-                                <TableCell>Start Date</TableCell>
-                                <TableCell>End Date</TableCell>
-                                <TableCell>Reason</TableCell>
-                                <TableCell>Status</TableCell>
-                                <TableCell>Actions</TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {leaves.length > 0 ? leaves.map((leave) => (
-                                <TableRow key={leave.id}>
-                                    <TableCell>{leave.employeeEmail}</TableCell>
-                                    <TableCell>{new Date(leave.startDate).toLocaleDateString()}</TableCell>
-                                    <TableCell>{new Date(leave.endDate).toLocaleDateString()}</TableCell>
-                                    <TableCell>{leave.reason}</TableCell>
-                                    <TableCell>
-                                        <Typography
-                                            variant="body2"
-                                            sx={{
-                                                color: leave.status === 'APPROVED' ? 'green' : leave.status === 'REJECTED' ? 'red' : 'darkorange',
-                                                fontWeight: 'bold'
-                                            }}
-                                        >
-                                            {leave.status}
-                                        </Typography>
-                                    </TableCell>
-                                    <TableCell>
-                                        {leave.status === 'PENDING' && (
-                                            <Box sx={{ display: 'flex', gap: 1 }}>
-                                                <Button
-                                                    variant="contained"
-                                                    color="success"
-                                                    size="small"
-                                                    disabled={actionLoading === leave.id}
-                                                    onClick={() => handleReview(leave.id, 'APPROVED')}
-                                                >
-                                                    Approve
-                                                </Button>
-                                                <Button
-                                                    variant="contained"
-                                                    color="error"
-                                                    size="small"
-                                                    disabled={actionLoading === leave.id}
-                                                    onClick={() => handleReview(leave.id, 'REJECTED')}
-                                                >
-                                                    Reject
-                                                </Button>
-                                            </Box>
-                                        )}
-                                    </TableCell>
-                                </TableRow>
-                            )) : (
-                                <TableRow>
-                                    <TableCell colSpan={6} align="center">No leave requests found.</TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                </TableContainer>
-            )}
+            <DataTable
+                columns={columns}
+                rows={leaves}
+                loading={isLoading && !actionLoading}
+                pagination={{
+                    page,
+                    pageSize,
+                    total: totalElements,
+                    totalPages
+                }}
+                onPageChange={setPage}
+                onPageSizeChange={setPageSize}
+                onSortChange={handleSortChange}
+                sortBy={sortBy}
+                sortDirection={sortDirection}
+            />
         </Box>
     );
 };

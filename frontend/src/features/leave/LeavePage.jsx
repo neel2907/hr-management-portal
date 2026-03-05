@@ -1,26 +1,46 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Button, TextField, Paper, Grid, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Alert, CircularProgress } from '@mui/material';
+import { Box, Typography, Button, TextField, Paper, Grid } from '@mui/material';
 import { applyLeave, getMyRequests } from '../../services/leaveService';
+import LeaveBalanceCard from './LeaveBalanceCard';
+import DataTable from '../../components/common/DataTable';
+import AlertSnackbar from '../../components/common/AlertSnackbar';
 
 const LeavePage = () => {
+    // Pagination and Sort State
+    const [page, setPage] = useState(0);
+    const [pageSize, setPageSize] = useState(10);
+    const [sortBy, setSortBy] = useState('startDate');
+    const [sortDirection, setSortDirection] = useState('desc');
+    const [totalElements, setTotalElements] = useState(0);
+    const [totalPages, setTotalPages] = useState(0);
+
     const [requests, setRequests] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [error, setError] = useState('');
     const [formData, setFormData] = useState({
         startDate: '',
         endDate: '',
         reason: ''
     });
 
+    // Snackbar State
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [snackbarMessage, setSnackbarMessage] = useState('');
+    const [snackbarSeverity, setSnackbarSeverity] = useState('success');
+
     const fetchRequests = async () => {
         setIsLoading(true);
-        setError('');
         try {
-            const res = await getMyRequests();
-            setRequests(res.data || []);
+            const sortConfig = [`${sortBy},${sortDirection}`];
+            const pageData = await getMyRequests({ page, size: pageSize, sort: sortConfig });
+
+            setRequests(pageData.rows);
+            setTotalElements(pageData.total);
+            setTotalPages(pageData.totalPages);
         } catch (err) {
-            setError('Failed to fetch leave requests.');
+            setSnackbarMessage('Failed to fetch leave requests.');
+            setSnackbarSeverity('error');
+            setSnackbarOpen(true);
         } finally {
             setIsLoading(false);
         }
@@ -28,7 +48,7 @@ const LeavePage = () => {
 
     useEffect(() => {
         fetchRequests();
-    }, []);
+    }, [page, pageSize, sortBy, sortDirection]);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -37,25 +57,81 @@ const LeavePage = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsSubmitting(true);
-        setError('');
         try {
             await applyLeave(formData);
             setFormData({ startDate: '', endDate: '', reason: '' });
+            setPage(0); // View new request
+            setSnackbarMessage('Leave request submitted successfully.');
+            setSnackbarSeverity('success');
+            setSnackbarOpen(true);
             fetchRequests();
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to apply for leave.');
+            setSnackbarMessage(err.response?.data?.message || 'Failed to apply for leave.');
+            setSnackbarSeverity('error');
+            setSnackbarOpen(true);
         } finally {
             setIsSubmitting(false);
         }
     };
 
+    const handleSortChange = (columnId, direction) => {
+        setSortBy(columnId);
+        setSortDirection(direction);
+    };
+
+    const columns = [
+        {
+            id: 'startDate',
+            label: 'Start Date',
+            sortable: true,
+            render: (val) => new Date(val).toLocaleDateString()
+        },
+        {
+            id: 'endDate',
+            label: 'End Date',
+            sortable: true,
+            render: (val) => new Date(val).toLocaleDateString()
+        },
+        {
+            id: 'reason',
+            label: 'Reason',
+            sortable: true
+        },
+        {
+            id: 'status',
+            label: 'Status',
+            sortable: true,
+            render: (val) => (
+                <Typography
+                    variant="body2"
+                    sx={{
+                        color: val === 'APPROVED' ? 'success.main' : val === 'REJECTED' ? 'error.main' : 'warning.main',
+                        fontWeight: 'bold'
+                    }}
+                >
+                    {val}
+                </Typography>
+            )
+        }
+    ];
+
     return (
         <Box>
             <Typography variant="h4" gutterBottom>Leave Management</Typography>
 
+            <AlertSnackbar
+                open={snackbarOpen}
+                message={snackbarMessage}
+                severity={snackbarSeverity}
+                onClose={() => setSnackbarOpen(false)}
+            />
+
+            {/* NEW LEAVE BALANCE COMPONENT */}
+            <LeaveBalanceCard />
+
             <Grid container spacing={4}>
                 {/* Leave Application Form */}
-                <Grid item xs={12} md={5}>
+                <Grid item xs={12} md={4}>
                     <Paper sx={{ p: 3 }}>
                         <Typography variant="h6" gutterBottom>Apply for Leave</Typography>
                         <form onSubmit={handleSubmit}>
@@ -105,52 +181,27 @@ const LeavePage = () => {
                 </Grid>
 
                 {/* Leave Requests List */}
-                <Grid item xs={12} md={7}>
-                    <Typography variant="h6" gutterBottom>My Requests</Typography>
-                    {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+                <Grid item xs={12} md={8}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                        <Typography variant="h6">My Requests</Typography>
+                    </Box>
 
-                    {isLoading ? (
-                        <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-                            <CircularProgress />
-                        </Box>
-                    ) : (
-                        <TableContainer component={Paper}>
-                            <Table>
-                                <TableHead>
-                                    <TableRow>
-                                        <TableCell>Start Date</TableCell>
-                                        <TableCell>End Date</TableCell>
-                                        <TableCell>Reason</TableCell>
-                                        <TableCell>Status</TableCell>
-                                    </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                    {requests.length > 0 ? requests.map((req) => (
-                                        <TableRow key={req.id}>
-                                            <TableCell>{new Date(req.startDate).toLocaleDateString()}</TableCell>
-                                            <TableCell>{new Date(req.endDate).toLocaleDateString()}</TableCell>
-                                            <TableCell>{req.reason}</TableCell>
-                                            <TableCell>
-                                                <Typography
-                                                    variant="body2"
-                                                    sx={{
-                                                        color: req.status === 'APPROVED' ? 'green' : req.status === 'REJECTED' ? 'red' : 'darkorange',
-                                                        fontWeight: 'bold'
-                                                    }}
-                                                >
-                                                    {req.status}
-                                                </Typography>
-                                            </TableCell>
-                                        </TableRow>
-                                    )) : (
-                                        <TableRow>
-                                            <TableCell colSpan={4} align="center">No leave requests found.</TableCell>
-                                        </TableRow>
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </TableContainer>
-                    )}
+                    <DataTable
+                        columns={columns}
+                        rows={requests}
+                        loading={isLoading}
+                        pagination={{
+                            page,
+                            pageSize,
+                            total: totalElements,
+                            totalPages
+                        }}
+                        onPageChange={setPage}
+                        onPageSizeChange={setPageSize}
+                        onSortChange={handleSortChange}
+                        sortBy={sortBy}
+                        sortDirection={sortDirection}
+                    />
                 </Grid>
             </Grid>
         </Box>

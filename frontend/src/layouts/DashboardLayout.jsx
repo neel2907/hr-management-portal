@@ -37,6 +37,7 @@ const DashboardLayout = () => {
                             <Button fullWidth align="left" sx={{ justifyContent: 'flex-start' }} onClick={() => navigate('/admin/attendance')}>Attendance Management</Button>
                             <Button fullWidth align="left" sx={{ justifyContent: 'flex-start' }} onClick={() => navigate('/admin/leave')}>Leave Management</Button>
                             <Button fullWidth align="left" sx={{ justifyContent: 'flex-start' }} onClick={() => navigate('/admin/performance')}>Performance Management</Button>
+                            <Button fullWidth align="left" sx={{ justifyContent: 'flex-start', mt: 2, color: 'text.secondary', borderTop: '1px solid #ccc', pt: 1 }} onClick={() => navigate('/admin/logs')}>System Audit Logs</Button>
                         </Box>
                     )}
 
@@ -45,6 +46,7 @@ const DashboardLayout = () => {
                             <Button fullWidth align="left" sx={{ justifyContent: 'flex-start' }} onClick={() => navigate('/dashboard')}>My Dashboard</Button>
                             <Button fullWidth align="left" sx={{ justifyContent: 'flex-start' }} onClick={() => navigate('/attendance')}>My Attendance</Button>
                             <Button fullWidth align="left" sx={{ justifyContent: 'flex-start' }} onClick={() => navigate('/leave')}>My Leave</Button>
+                            <Button fullWidth align="left" sx={{ justifyContent: 'flex-start', pl: 4, my: 0.5, fontSize: '0.8rem', color: 'text.secondary' }} onClick={() => navigate('/leave/ledger')}>↳ Leave Ledger</Button>
                             <Button fullWidth align="left" sx={{ justifyContent: 'flex-start' }} onClick={() => navigate('/performance')}>My Performance</Button>
                         </Box>
                     )}
