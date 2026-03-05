@@ -54,6 +54,16 @@ public class User {
     @Column(name = "annual_leave_balance")
     private Integer annualLeaveBalance = 30;
 
+    @Builder.Default
+    @Column(name = "failed_attempts")
+    private Integer failedAttempts = 0;
+
+    @Builder.Default
+    @Column(name = "account_locked")
+    private Boolean accountLocked = false;
+
+    private LocalDateTime lockTime;
+
 	public User() {
 		super();
 		// TODO Auto-generated constructor stub
@@ -144,6 +154,29 @@ public class User {
 	public void setAnnualLeaveBalance(Integer annualLeaveBalance) {
 		this.annualLeaveBalance = annualLeaveBalance;
 	}
-    
+
+    public Integer getFailedAttempts() {
+        return failedAttempts;
+    }
+
+    public void setFailedAttempts(Integer failedAttempts) {
+        this.failedAttempts = failedAttempts;
+    }
+
+    public Boolean getAccountLocked() {
+        return accountLocked;
+    }
+
+    public void setAccountLocked(Boolean accountLocked) {
+        this.accountLocked = accountLocked;
+    }
+
+    public LocalDateTime getLockTime() {
+        return lockTime;
+    }
+
+    public void setLockTime(LocalDateTime lockTime) {
+        this.lockTime = lockTime;
+    }
     
 }

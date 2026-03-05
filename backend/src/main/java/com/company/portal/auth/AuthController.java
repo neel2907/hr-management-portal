@@ -5,10 +5,14 @@ import com.company.portal.security.CustomUserDetailsService;
 import com.company.portal.audit.AuditLogService;
 import com.company.portal.user.User;
 import com.company.portal.user.UserRepository;
-import org.springframework.security.authentication.*;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -47,28 +51,60 @@ public class AuthController {
     @PostMapping("/login")
     public AuthResponse login(@RequestBody LoginRequest request) {
 
-        Authentication authentication =
-                authenticationManager.authenticate(
-                        new UsernamePasswordAuthenticationToken(
-                                request.getEmail(),
-                                request.getPassword()
-                        )
-                );
-
-        UserDetails userDetails =
-                (UserDetails) authentication.getPrincipal();
-
-        String token = jwtUtil.generateToken(userDetails);
-
-        User user = userRepository.findByEmail(userDetails.getUsername())
+        User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
+        // Auto-unlock after 30 minutes
+        if (Boolean.TRUE.equals(user.getAccountLocked()) && user.getLockTime() != null) {
+            if (user.getLockTime().plusMinutes(30).isBefore(LocalDateTime.now())) {
+                user.setAccountLocked(false);
+                user.setFailedAttempts(0);
+                user.setLockTime(null);
+                userRepository.save(user);
+            }
+        }
 
-        auditLogService.record("USER_LOGIN",
-                "User " + user.getId() + " logged in");
+        if (Boolean.TRUE.equals(user.getAccountLocked())) {
+            throw new RuntimeException("Account is locked. Try again later.");
+        }
 
-        return new AuthResponse(token, refreshToken.getToken());
+        try {
+            Authentication authentication =
+                    authenticationManager.authenticate(
+                            new UsernamePasswordAuthenticationToken(
+                                    request.getEmail(),
+                                    request.getPassword()
+                            )
+                    );
+
+            // Success: reset attempts
+            user.setFailedAttempts(0);
+            user.setAccountLocked(false);
+            user.setLockTime(null);
+            userRepository.save(user);
+
+            UserDetails userDetails =
+                    (UserDetails) authentication.getPrincipal();
+
+            String token = jwtUtil.generateToken(userDetails);
+
+            RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
+
+            auditLogService.record("USER_LOGIN",
+                    "User " + user.getId() + " logged in");
+
+            return new AuthResponse(token, refreshToken.getToken());
+
+        } catch (BadCredentialsException ex) {
+            int attempts = (user.getFailedAttempts() == null ? 0 : user.getFailedAttempts()) + 1;
+            user.setFailedAttempts(attempts);
+            if (attempts >= 5) {
+                user.setAccountLocked(true);
+                user.setLockTime(LocalDateTime.now());
+            }
+            userRepository.save(user);
+            throw ex;
+        }
     }
 
     @PostMapping("/refresh")

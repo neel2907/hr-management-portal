@@ -24,8 +24,15 @@ public class AuthService {
         this.auditLogService = auditLogService;
     }
 
+    private static final String PASSWORD_REGEX =
+            "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&]).{8,}$";
+
     @Transactional
     public void register(RegisterRequest request) {
+
+        if (!request.getPassword().matches(PASSWORD_REGEX)) {
+            throw new IllegalArgumentException("Password does not meet complexity requirements");
+        }
 
         // Check if email already exists
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {

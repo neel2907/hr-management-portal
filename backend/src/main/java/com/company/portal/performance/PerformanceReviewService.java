@@ -8,6 +8,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 
@@ -26,6 +27,7 @@ public class PerformanceReviewService {
         this.auditLogService = auditLogService;
     }
 
+    @Transactional
     public PerformanceReview createReview(CreatePerformanceReviewRequest request) {
         User reviewer = getCurrentUser();
         if (reviewer.getRole() != Role.ADMIN) {

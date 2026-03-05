@@ -14,4 +14,6 @@ public interface LeaveRepository
     Page<LeaveRequest> findByUserId(String userId, Pageable pageable);
     
     long countByStatus(String status);
+
+    List<LeaveRequest> findByUserIdAndStatusIn(String userId, List<String> statuses);
 }

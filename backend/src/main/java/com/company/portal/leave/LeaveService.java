@@ -34,6 +34,7 @@ public class LeaveService {
     }
 
     // ✅ Apply Leave (EMPLOYEE)
+    @Transactional
     public String applyLeave(LeaveRequest request) {
 
         String email = SecurityContextHolder.getContext()
@@ -43,14 +44,34 @@ public class LeaveService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
+        LocalDate today = LocalDate.now();
+        if (request.getStartDate().isBefore(today)) {
+            throw new RuntimeException("Start date cannot be in the past");
+        }
+
         if (request.getStartDate().isAfter(request.getEndDate())) {
-            throw new RuntimeException("Invalid date range");
+            throw new RuntimeException("End date must be after start date");
         }
 
         long days = ChronoUnit.DAYS.between(
                 request.getStartDate(),
                 request.getEndDate()
         ) + 1;
+
+        if (user.getAnnualLeaveBalance() < days) {
+            throw new RuntimeException("Insufficient leave balance");
+        }
+
+        // prevent overlap with existing PENDING / APPROVED leaves
+        List<String> statuses = List.of("PENDING", "APPROVED");
+        List<LeaveRequest> existing = leaveRepository.findByUserIdAndStatusIn(user.getId(), statuses);
+        boolean hasOverlap = existing.stream().anyMatch(l ->
+                !l.getEndDate().isBefore(request.getStartDate()) &&
+                !l.getStartDate().isAfter(request.getEndDate())
+        );
+        if (hasOverlap) {
+            throw new RuntimeException("Leave overlaps with an existing request");
+        }
 
         LeaveRequest leave = new LeaveRequest();
         leave.setUser(user);
