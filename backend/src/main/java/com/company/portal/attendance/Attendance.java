@@ -44,8 +44,14 @@ public class Attendance {
     @Column(nullable = false)
     private String status;
 
+    @Column(name = "is_late", nullable = false)
+    private boolean late;
+
+    @Column(name = "is_overtime", nullable = false)
+    private boolean overtime;
+
 	public Attendance(String id, User user, LocalDate attendanceDate, LocalDateTime checkIn, LocalDateTime checkOut,
-			Double totalWorkingHours, String status) {
+			Double totalWorkingHours, String status, boolean late, boolean overtime) {
 		super();
 		this.id = id;
 		this.user = user;
@@ -54,6 +60,8 @@ public class Attendance {
 		this.checkOut = checkOut;
 		this.totalWorkingHours = totalWorkingHours;
 		this.status = status;
+		this.late = late;
+		this.overtime = overtime;
 	}
 
 	public Attendance() {
@@ -117,7 +125,20 @@ public class Attendance {
 		this.status = status;
 	}
 
-    // Getters and setters
-    
-    
+	public boolean isLate() {
+		return late;
+	}
+
+	public void setLate(boolean late) {
+		this.late = late;
+	}
+
+	public boolean isOvertime() {
+		return overtime;
+	}
+
+	public void setOvertime(boolean overtime) {
+		this.overtime = overtime;
+	}
+
 }

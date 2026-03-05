@@ -26,11 +26,16 @@ public class AdminDashboardService {
     public DashboardStats getStats() {
 
         LocalDate today = LocalDate.now();
+        LocalDate monthStart = today.withDayOfMonth(1);
+        LocalDate monthEnd = monthStart.withDayOfMonth(monthStart.lengthOfMonth());
 
         DashboardStats stats = new DashboardStats();
         stats.setTotalEmployees(userRepository.count());
         stats.setPresentToday(attendanceRepository.countByAttendanceDate(today));
         stats.setPendingLeaves(leaveRepository.countByStatus("PENDING"));
+        stats.setTotalAttendanceRecords(attendanceRepository.count());
+        stats.setAttendanceRecordsThisMonth(
+                attendanceRepository.countByAttendanceDateBetween(monthStart, monthEnd));
 
         return stats;
     }

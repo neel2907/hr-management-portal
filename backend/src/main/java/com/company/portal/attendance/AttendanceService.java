@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 
 @Service
@@ -51,8 +52,17 @@ public class AttendanceService {
         Attendance attendance = new Attendance();
         attendance.setUser(user);
         attendance.setAttendanceDate(today);
-        attendance.setCheckIn(LocalDateTime.now());
+        LocalDateTime checkInTime = LocalDateTime.now();
+        attendance.setCheckIn(checkInTime);
         attendance.setStatus("PRESENT");
+
+        // Late detection: check-in after 9:15 AM
+        LocalTime lateThreshold = LocalTime.of(9, 15);
+        boolean isLate = checkInTime.toLocalTime().isAfter(lateThreshold);
+        attendance.setLate(isLate);
+
+        // Initialize overtime flag as false on check-in
+        attendance.setOvertime(false);
 
         attendanceRepository.save(attendance);
 
@@ -95,6 +105,10 @@ public class AttendanceService {
 
         double hours = duration.toMinutes() / 60.0;
         attendance.setTotalWorkingHours(hours);
+
+        // Overtime detection: total working hours > 8
+        boolean isOvertime = hours > 8.0;
+        attendance.setOvertime(isOvertime);
 
         attendanceRepository.save(attendance);
 

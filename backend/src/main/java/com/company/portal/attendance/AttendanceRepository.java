@@ -24,4 +24,6 @@ public interface AttendanceRepository
             LocalDate end);
     
     long countByAttendanceDate(LocalDate date);
+
+    long countByAttendanceDateBetween(LocalDate start, LocalDate end);
 }
