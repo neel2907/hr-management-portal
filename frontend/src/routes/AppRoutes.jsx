@@ -5,7 +5,7 @@ import DashboardLayout from '../layouts/DashboardLayout';
 import ProtectedRoute from './ProtectedRoute';
 
 // Lazy loading can be applied here for production
-import Login from '../features/auth/Login';
+import Login from '../features/auth/LoginPage';
 import Register from '../features/auth/Register';
 import AttendancePage from '../features/attendance/AttendancePage';
 import LeavePage from '../features/leave/LeavePage';

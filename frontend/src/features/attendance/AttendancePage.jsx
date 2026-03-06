@@ -17,7 +17,7 @@ const AttendancePage = () => {
     const [records, setRecords] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [actionLoading, setActionLoading] = useState(false);
-    
+
     // Snackbar State
     const [snackbarOpen, setSnackbarOpen] = useState(false);
     const [snackbarMessage, setSnackbarMessage] = useState('');
@@ -28,8 +28,8 @@ const AttendancePage = () => {
         setIsLoading(true);
         try {
             const sortConfig = [`${sortBy},${sortDirection}`];
-            const pageData = await getMyRecords({page, size: pageSize, sort: sortConfig});
-            
+            const pageData = await getMyRecords({ page, size: pageSize, sort: sortConfig });
+
             setRecords(pageData.rows);
             setTotalElements(pageData.total);
             setTotalPages(pageData.totalPages);
@@ -49,14 +49,14 @@ const AttendancePage = () => {
     const handleAction = async (action) => {
         setActionLoading(true);
         try {
-            await api.post(`/api/attendance/${action}`);
-            setSnackbarMessage(`Successfully checked ${ action === 'check-in' ? 'in' : 'out' }.`);
+            await api.post(`/attendance/${action}`);
+            setSnackbarMessage(`Successfully checked ${action === 'check-in' ? 'in' : 'out'}.`);
             setSnackbarSeverity('success');
             setSnackbarOpen(true);
             setPage(0); // View the new record on the first page
             // `setPage(0)` will trigger `useEffect` to refresh records
         } catch (err) {
-            setSnackbarMessage(err.response?.data?.message || `Failed to check ${ action === 'check-in' ? 'in' : 'out' }.`);
+            setSnackbarMessage(err.response?.data?.message || `Failed to check ${action === 'check-in' ? 'in' : 'out'}.`);
             setSnackbarSeverity('error');
             setSnackbarOpen(true);
         } finally {
@@ -76,21 +76,21 @@ const AttendancePage = () => {
             sortable: true,
             render: (val) => (val ? new Date(val).toLocaleDateString() : '--')
         },
-        { 
-            id: 'checkInTime', 
-            label: 'Check In', 
+        {
+            id: 'checkInTime',
+            label: 'Check In',
             sortable: true,
             render: (val) => val || '--:--'
         },
-        { 
-            id: 'checkOutTime', 
-            label: 'Check Out', 
+        {
+            id: 'checkOutTime',
+            label: 'Check Out',
             sortable: true,
             render: (val) => val || '--:--'
         },
-        { 
-            id: 'status', 
-            label: 'Status', 
+        {
+            id: 'status',
+            label: 'Status',
             sortable: true,
             render: (val, row) => (
                 <Stack direction="row" spacing={1} alignItems="center">
@@ -110,25 +110,25 @@ const AttendancePage = () => {
         <Box>
             <Typography variant="h4" gutterBottom>My Attendance</Typography>
 
-            <AlertSnackbar 
-                open={snackbarOpen} 
-                message={snackbarMessage} 
-                severity={snackbarSeverity} 
-                onClose={() => setSnackbarOpen(false)} 
+            <AlertSnackbar
+                open={snackbarOpen}
+                message={snackbarMessage}
+                severity={snackbarSeverity}
+                onClose={() => setSnackbarOpen(false)}
             />
 
             <Paper sx={{ p: 2, mb: 4, display: 'flex', gap: 2 }}>
-                <Button 
-                    variant="contained" 
-                    color="primary" 
+                <Button
+                    variant="contained"
+                    color="primary"
                     onClick={() => handleAction('check-in')}
                     disabled={actionLoading}
                 >
                     Check In
                 </Button>
-                <Button 
-                    variant="contained" 
-                    color="secondary" 
+                <Button
+                    variant="contained"
+                    color="secondary"
                     onClick={() => handleAction('check-out')}
                     disabled={actionLoading}
                 >
@@ -137,7 +137,7 @@ const AttendancePage = () => {
             </Paper>
 
             <Typography variant="h6" gutterBottom>Attendance History</Typography>
-            
+
             <DataTable
                 columns={columns}
                 rows={records}

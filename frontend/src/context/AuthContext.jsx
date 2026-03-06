@@ -19,14 +19,19 @@ export const AuthProvider = ({ children }) => {
 
     useEffect(() => {
         const token = localStorage.getItem('token');
-        if (token) {
-            if (checkTokenExpiry(token)) {
-                logout();
-            } else {
-                const decodedUser = decodeJWT(token);
-                setUser(decodedUser);
-                setRole(decodedUser?.role);
-            }
+        if (!token) {
+            setUser(null);
+            setRole(null);
+            setIsLoading(false);
+            return;
+        }
+
+        const decodedUser = decodeJWT(token);
+        if (!decodedUser || checkTokenExpiry(token)) {
+            logout();
+        } else {
+            setUser(decodedUser);
+            setRole(decodedUser?.role || decodedUser?.authorities);
         }
         setIsLoading(false);
     }, []);
@@ -50,7 +55,7 @@ export const AuthProvider = ({ children }) => {
     const isAuthenticated = !!user;
 
     return (
-        <AuthContext.Provider value={{ user, role, isAuthenticated, isLoading, login, logout }}>
+        <AuthContext.Provider value={{ user, role, isAuthenticated, isLoading, loading: isLoading, login, logout }}>
             {children}
         </AuthContext.Provider>
     );
