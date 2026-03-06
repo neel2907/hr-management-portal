@@ -1,4 +1,3 @@
-```javascript
 import React, { useState, useEffect } from 'react';
 import { Box, Typography, Button, Paper, Stack, Chip } from '@mui/material';
 import { getMyRecords } from '../../services/attendanceService';
@@ -28,8 +27,8 @@ const AttendancePage = () => {
     const fetchRecords = async () => {
         setIsLoading(true);
         try {
-            const sortConfig = [`${ sortBy },${ sortDirection } `];
-            const pageData = await getMyRecords({ page, size: pageSize, sort: sortConfig });
+            const sortConfig = [`${sortBy},${sortDirection}`];
+            const pageData = await getMyRecords({page, size: pageSize, sort: sortConfig});
             
             setRecords(pageData.rows);
             setTotalElements(pageData.total);
@@ -50,12 +49,12 @@ const AttendancePage = () => {
     const handleAction = async (action) => {
         setActionLoading(true);
         try {
-            await api.post(`/ api / attendance / ${ action } `);
+            await api.post(`/api/attendance/${action}`);
             setSnackbarMessage(`Successfully checked ${ action === 'check-in' ? 'in' : 'out' }.`);
             setSnackbarSeverity('success');
             setSnackbarOpen(true);
             setPage(0); // View the new record on the first page
-            fetchRecords();
+            // `setPage(0)` will trigger `useEffect` to refresh records
         } catch (err) {
             setSnackbarMessage(err.response?.data?.message || `Failed to check ${ action === 'check-in' ? 'in' : 'out' }.`);
             setSnackbarSeverity('error');
@@ -71,11 +70,11 @@ const AttendancePage = () => {
     };
 
     const columns = [
-        { 
-            id: 'date', 
-            label: 'Date', 
+        {
+            id: 'date',
+            label: 'Date',
             sortable: true,
-            render: (val) => new Date(val).toLocaleDateString() 
+            render: (val) => (val ? new Date(val).toLocaleDateString() : '--')
         },
         { 
             id: 'checkInTime', 
@@ -160,4 +159,3 @@ const AttendancePage = () => {
 };
 
 export default AttendancePage;
-```
