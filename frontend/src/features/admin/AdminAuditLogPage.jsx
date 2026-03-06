@@ -67,7 +67,7 @@ const AdminAuditLogPage = () => {
         },
         {
             id: 'performedBy',
-            label: 'Performed By',
+            label: 'User',
             sortable: true
         },
         {

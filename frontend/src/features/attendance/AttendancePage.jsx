@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Typography, Button, Paper, Stack, Chip } from '@mui/material';
-import { getMyRecords } from '../../services/attendanceService';
-import api from '../../services/api';
+import { getMyRecords, checkIn, checkOut } from '../../services/attendanceService';
 import DataTable from '../../components/common/DataTable';
 import AlertSnackbar from '../../components/common/AlertSnackbar';
 
@@ -49,7 +48,11 @@ const AttendancePage = () => {
     const handleAction = async (action) => {
         setActionLoading(true);
         try {
-            await api.post(`/attendance/${action}`);
+            if (action === 'check-in') {
+                await checkIn();
+            } else {
+                await checkOut();
+            }
             setSnackbarMessage(`Successfully checked ${action === 'check-in' ? 'in' : 'out'}.`);
             setSnackbarSeverity('success');
             setSnackbarOpen(true);

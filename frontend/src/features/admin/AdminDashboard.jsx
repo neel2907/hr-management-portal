@@ -63,8 +63,8 @@ const AdminDashboard = () => {
                     <Grid item xs={12} sm={6} md={3}>
                         <Card>
                             <CardContent>
-                                <Typography color="textSecondary" gutterBottom>Total Reviews</Typography>
-                                <Typography variant="h5">{stats.totalReviews || 0}</Typography>
+                                <Typography color="textSecondary" gutterBottom>Total Leave Requests</Typography>
+                                <Typography variant="h5">{stats.totalLeaveRequests || 0}</Typography>
                             </CardContent>
                         </Card>
                     </Grid>
