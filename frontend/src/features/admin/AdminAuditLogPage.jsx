@@ -31,7 +31,7 @@ const AdminAuditLogPage = () => {
             setTotalElements(pageData.total);
             setTotalPages(pageData.totalPages);
         } catch (err) {
-            setSnackbarMessage('Failed to fetch audit logs.');
+            setSnackbarMessage(err.response?.data?.message || 'Something went wrong. Please try again.');
             setSnackbarSeverity('error');
             setSnackbarOpen(true);
         } finally {

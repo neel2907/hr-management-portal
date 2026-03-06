@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Button, Paper, Stack, Chip } from '@mui/material';
+import { Box, Typography, Button, Paper, Stack, Chip, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from '@mui/material';
 import { getMyRecords, checkIn, checkOut } from '../../services/attendanceService';
 import DataTable from '../../components/common/DataTable';
 import AlertSnackbar from '../../components/common/AlertSnackbar';
@@ -22,7 +22,8 @@ const AttendancePage = () => {
     const [snackbarMessage, setSnackbarMessage] = useState('');
     const [snackbarSeverity, setSnackbarSeverity] = useState('success');
 
-
+    // Dialog State
+    const [confirmAction, setConfirmAction] = useState(null);
     const fetchRecords = async () => {
         setIsLoading(true);
         try {
@@ -33,7 +34,7 @@ const AttendancePage = () => {
             setTotalElements(pageData.total);
             setTotalPages(pageData.totalPages);
         } catch (err) {
-            setSnackbarMessage('Failed to fetch attendance records.');
+            setSnackbarMessage(err.response?.data?.message || 'Something went wrong. Please try again.');
             setSnackbarSeverity('error');
             setSnackbarOpen(true);
         } finally {
@@ -59,7 +60,7 @@ const AttendancePage = () => {
             setPage(0); // View the new record on the first page
             // `setPage(0)` will trigger `useEffect` to refresh records
         } catch (err) {
-            setSnackbarMessage(err.response?.data?.message || `Failed to check ${action === 'check-in' ? 'in' : 'out'}.`);
+            setSnackbarMessage(err.response?.data?.message || 'Something went wrong. Please try again.');
             setSnackbarSeverity('error');
             setSnackbarOpen(true);
         } finally {
@@ -124,7 +125,7 @@ const AttendancePage = () => {
                 <Button
                     variant="contained"
                     color="primary"
-                    onClick={() => handleAction('check-in')}
+                    onClick={() => setConfirmAction('check-in')}
                     disabled={actionLoading}
                 >
                     Check In
@@ -132,12 +133,38 @@ const AttendancePage = () => {
                 <Button
                     variant="contained"
                     color="secondary"
-                    onClick={() => handleAction('check-out')}
+                    onClick={() => setConfirmAction('check-out')}
                     disabled={actionLoading}
                 >
                     Check Out
                 </Button>
             </Paper>
+
+            <Dialog
+                open={Boolean(confirmAction)}
+                onClose={() => setConfirmAction(null)}
+            >
+                <DialogTitle>Confirm Action</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        Are you sure you want to {confirmAction === 'check-in' ? 'check in' : 'check out'}?
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setConfirmAction(null)}>Cancel</Button>
+                    <Button
+                        onClick={() => {
+                            const action = confirmAction;
+                            setConfirmAction(null);
+                            handleAction(action);
+                        }}
+                        autoFocus
+                        variant="contained"
+                    >
+                        Confirm
+                    </Button>
+                </DialogActions>
+            </Dialog>
 
             <Typography variant="h6" gutterBottom>Attendance History</Typography>
 

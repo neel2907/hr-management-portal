@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Button, TextField, Paper, Grid } from '@mui/material';
+import { Box, Typography, Button, TextField, Paper, Grid, MenuItem } from '@mui/material';
 import { applyLeave, getMyRequests } from '../../services/leaveService';
 import LeaveBalanceCard from './LeaveBalanceCard';
 import DataTable from '../../components/common/DataTable';
@@ -18,10 +18,12 @@ const LeavePage = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [formData, setFormData] = useState({
+        leaveType: '',
         startDate: '',
         endDate: '',
         reason: ''
     });
+    const [errors, setErrors] = useState({});
 
     // Snackbar State
     const [snackbarOpen, setSnackbarOpen] = useState(false);
@@ -38,7 +40,7 @@ const LeavePage = () => {
             setTotalElements(pageData.total);
             setTotalPages(pageData.totalPages);
         } catch (err) {
-            setSnackbarMessage('Failed to fetch leave requests.');
+            setSnackbarMessage(err.response?.data?.message || 'Something went wrong. Please try again.');
             setSnackbarSeverity('error');
             setSnackbarOpen(true);
         } finally {
@@ -52,21 +54,38 @@ const LeavePage = () => {
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
+        if (errors[e.target.name]) {
+            setErrors({ ...errors, [e.target.name]: '' });
+        }
+    };
+
+    const validateForm = () => {
+        const newErrors = {};
+        if (!formData.leaveType) newErrors.leaveType = 'Leave type is required.';
+        if (!formData.startDate) newErrors.startDate = 'Start date is required.';
+        if (formData.startDate && formData.endDate && new Date(formData.endDate) <= new Date(formData.startDate)) {
+            newErrors.endDate = 'End date must be after start date.';
+        }
+        if (!formData.reason.trim()) newErrors.reason = 'Reason should not be empty.';
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (!validateForm()) return;
         setIsSubmitting(true);
         try {
             await applyLeave(formData);
-            setFormData({ startDate: '', endDate: '', reason: '' });
+            setFormData({ leaveType: '', startDate: '', endDate: '', reason: '' });
             setPage(0); // View new request
             setSnackbarMessage('Leave request submitted successfully.');
             setSnackbarSeverity('success');
             setSnackbarOpen(true);
             fetchRequests();
         } catch (err) {
-            setSnackbarMessage(err.response?.data?.message || 'Failed to apply for leave.');
+            setSnackbarMessage(err.response?.data?.message || 'Something went wrong. Please try again.');
             setSnackbarSeverity('error');
             setSnackbarOpen(true);
         } finally {
@@ -80,6 +99,11 @@ const LeavePage = () => {
     };
 
     const columns = [
+        {
+            id: 'leaveType',
+            label: 'Leave Type',
+            sortable: true
+        },
         {
             id: 'startDate',
             label: 'Start Date',
@@ -136,6 +160,22 @@ const LeavePage = () => {
                         <Typography variant="h6" gutterBottom>Apply for Leave</Typography>
                         <form onSubmit={handleSubmit}>
                             <TextField
+                                select
+                                fullWidth
+                                label="Leave Type"
+                                name="leaveType"
+                                value={formData.leaveType}
+                                onChange={handleChange}
+                                required
+                                error={!!errors.leaveType}
+                                helperText={errors.leaveType}
+                                sx={{ mb: 2 }}
+                            >
+                                <MenuItem value="SICK">Sick Leave</MenuItem>
+                                <MenuItem value="CASUAL">Casual Leave</MenuItem>
+                                <MenuItem value="ANNUAL">Annual Leave</MenuItem>
+                            </TextField>
+                            <TextField
                                 fullWidth
                                 label="Start Date"
                                 type="date"
@@ -144,6 +184,8 @@ const LeavePage = () => {
                                 onChange={handleChange}
                                 InputLabelProps={{ shrink: true }}
                                 required
+                                error={!!errors.startDate}
+                                helperText={errors.startDate}
                                 sx={{ mb: 2 }}
                             />
                             <TextField
@@ -155,6 +197,8 @@ const LeavePage = () => {
                                 onChange={handleChange}
                                 InputLabelProps={{ shrink: true }}
                                 required
+                                error={!!errors.endDate}
+                                helperText={errors.endDate}
                                 sx={{ mb: 2 }}
                             />
                             <TextField
@@ -166,6 +210,8 @@ const LeavePage = () => {
                                 multiline
                                 rows={4}
                                 required
+                                error={!!errors.reason}
+                                helperText={errors.reason}
                                 sx={{ mb: 2 }}
                             />
                             <Button

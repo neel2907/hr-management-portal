@@ -14,7 +14,7 @@ const LeaveBalanceCard = () => {
             const res = await getLeaveBalance();
             setBalance(res.data?.remainingBalance ?? 0);
         } catch (err) {
-            setError('Failed to load leave balance.');
+            setError(err.response?.data?.message || 'Something went wrong. Please try again.');
             console.error(err);
         } finally {
             setIsLoading(false);
